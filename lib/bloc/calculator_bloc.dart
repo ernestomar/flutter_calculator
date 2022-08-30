@@ -11,12 +11,10 @@ class CalculatorBloc implements Bloc {
 
   Sink<int?> get pressKeySink => _calculatorController.sink;
 
-  late Stream<int?> calculatorStream;
+  late Stream<String?> calculatorStream;
 
   CalculatorBloc() {
-    print("SE INVOCA CONSTRUCTOR");
     calculatorStream = _calculatorController.stream.asyncMap((key) {
-      print("En el Bloc $key");
       return _calculatorBl.onKeyPress(key);
     });
   }

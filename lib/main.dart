@@ -1,7 +1,6 @@
 import 'package:calculator/bloc/bloc_provider.dart';
 import 'package:calculator/bloc/calculator_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:math_expressions/math_expressions.dart';
 
 import 'widgets/my_button.dart';
 
@@ -42,9 +41,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Array of button
   final List<String> buttons = [
-    'C',
-    '+/-',
-    '%',
+    'C', //0
+    '+/-', //1
+    '%', //2
     'DEL',
     '7',
     '8',
@@ -66,6 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final calculatorBloc = BlocProvider.of<CalculatorBloc>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text("Calculator"),
@@ -78,10 +78,12 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
+                    // La calculadora tiene dos textos.
                     Container(
                       padding: const EdgeInsets.all(20),
                       alignment: Alignment.centerRight,
                       child: Text(
+                        // En letra pqequeña para mostrar la formula
                         userInput,
                         style:
                             const TextStyle(fontSize: 18, color: Colors.white),
@@ -90,13 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Container(
                       padding: const EdgeInsets.all(15),
                       alignment: Alignment.centerRight,
-                      child: Text(
-                        answer,
-                        style: const TextStyle(
-                            fontSize: 30,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold),
-                      ),
+                      child: _buildAnswerText(calculatorBloc),
                     )
                   ]),
             ),
@@ -109,101 +105,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4),
                   itemBuilder: (BuildContext context, int index) {
-                    final calculatorBloc =
-                        BlocProvider.of<CalculatorBloc>(context);
                     return MyButton(
-                      buttontapped: () =>
-                          calculatorBloc.pressKeySink.add(index),
+                      buttontapped: () {
+                        print("Boton presionado $index");
+                        calculatorBloc.pressKeySink.add(index);
+                      },
                       buttonText: buttons[index],
                       color: Colors.blue[50],
                       textColor: Colors.black,
                     );
-
-                    // // Clear Button
-                    // if (index == 0) {
-                    //   return MyButton(
-                    //     buttontapped: () {
-                    //       final calculatorBloc =
-                    //           BlocProvider.of<CalculatorBloc>(context);
-                    //       calculatorBloc.pressKeySink.add(index);
-                    //       // setState(() {
-                    //       //   userInput = '';
-                    //       //   answer = '0';
-                    //       // });
-                    //     },
-                    //     buttonText: buttons[index],
-                    //     color: Colors.blue[50],
-                    //     textColor: Colors.black,
-                    //   );
-                    // }
-
-                    // // +/- button
-                    // else if (index == 1) {
-                    //   return MyButton(
-                    //     buttonText: buttons[index],
-                    //     color: Colors.blue[50],
-                    //     textColor: Colors.black,
-                    //   );
-                    // }
-                    // // % Button
-                    // else if (index == 2) {
-                    //   return MyButton(
-                    //     buttontapped: () {
-                    //       setState(() {
-                    //         userInput += buttons[index];
-                    //       });
-                    //     },
-                    //     buttonText: buttons[index],
-                    //     color: Colors.blue[50],
-                    //     textColor: Colors.black,
-                    //   );
-                    // }
-                    // // Delete Button
-                    // else if (index == 3) {
-                    //   return MyButton(
-                    //     buttontapped: () {
-                    //       setState(() {
-                    //         // Elimina el ultimo carcater
-                    //         userInput =
-                    //             userInput.substring(0, userInput.length - 1);
-                    //       });
-                    //     },
-                    //     buttonText: buttons[index],
-                    //     color: Colors.blue[50],
-                    //     textColor: Colors.black,
-                    //   );
-                    // }
-                    // // Equal_to Button
-                    // else if (index == 18) {
-                    //   return MyButton(
-                    //     buttontapped: () {
-                    //       setState(() {
-                    //         equalPressed();
-                    //       });
-                    //     },
-                    //     buttonText: buttons[index],
-                    //     color: Colors.orange[700],
-                    //     textColor: Colors.white,
-                    //   );
-                    // }
-
-                    // //  other buttons
-                    // else {
-                    //   return MyButton(
-                    //     buttontapped: () {
-                    //       setState(() {
-                    //         userInput += buttons[index];
-                    //       });
-                    //     },
-                    //     buttonText: buttons[index],
-                    //     color: isOperator(buttons[index])
-                    //         ? Colors.blueAccent
-                    //         : Colors.white,
-                    //     textColor: isOperator(buttons[index])
-                    //         ? Colors.white
-                    //         : Colors.black,
-                    //   );
-                    // }
                   }), // GridView.builder
             ),
           ),
@@ -222,17 +132,22 @@ class _MyHomePageState extends State<MyHomePage> {
     return false;
   }
 
-  // /// Este metodo se invoca cuando se apreta al boton igual, luego se calcula
-  // /// con la libreria math_expressions el valor del computo.
-  // /// Este metodo se invoca dentro de un setState()
-  // void equalPressed() {
-  //   String finaluserinput = userInput;
-  //   finaluserinput = userInput.replaceAll('x', '*');
-
-  //   Parser p = Parser();
-  //   Expression exp = p.parse(finaluserinput);
-  //   ContextModel cm = ContextModel();
-  //   double eval = exp.evaluate(EvaluationType.REAL, cm);
-  //   answer = eval.toString();
-  // }
+  Widget _buildAnswerText(CalculatorBloc bloc) {
+    return StreamBuilder<String?>(
+      stream: bloc.calculatorStream,
+      builder: (context, snapshot) {
+        print("En StreamBuilder: ${snapshot.data}");
+        var answerText = "0";
+        if (snapshot.data != null) {
+          answerText = snapshot.data.toString();
+        }
+        return Text(
+          // En letra grande para mostrar el resultado
+          answerText,
+          style: const TextStyle(
+              fontSize: 30, color: Colors.white, fontWeight: FontWeight.bold),
+        );
+      },
+    );
+  }
 }
